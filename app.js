@@ -123,12 +123,12 @@ const mapSnakePositions = () => {
     snake.tail.unshift({x: snake.xPos, y: snake.yPos});
 };
 
-const checkTailCollision = () => {
+const isTailCollision = () => {
     const pos = {x: snake.xPos, y: snake.yPos};
 
     for (let i = 0; i < actualScore; i++) 
         if (snake.tail[i].x === pos.x && snake.tail[i].y === pos.y)
-            gameOver();
+            return true;
 };
 
 const keepMovingSnake = () => {
@@ -149,8 +149,6 @@ const keepMovingSnake = () => {
             snake.xPos += snake.dimension;
             break;
     }
-
-    checkTailCollision();
 };
 
 const drawSnake = () => {
@@ -169,7 +167,7 @@ const drawSnake = () => {
 };
 
 const createAppleObjects = () => {
-    const howManyApples = 5;
+    const howManyApples = 3;
 
     for (let i = 0; i < howManyApples; i++)
         applesStack[i] = Object.fromEntries(appleObjectsTemplate);
@@ -179,11 +177,12 @@ const getAppleRandomPosition = () => {
     let random = 0;
 
     do {
-        // Random value from 50 to 450 so it gives 50-50 to 450-450 area where the apple can be respawn,
+        // Random value from 50 to 450 (in 500px canvas size, in 400px will be proporionaly lower) 
+        // so it gives 50-50 to 450-450 area where the apple can be respawn,
         // which is good because the gamer is always able to eat apple, no bugs likes 0-0/ 475-475 apple respawn,
         // what will be impossible to eat and safe the snake from the boundary
         random = Math.floor( Math.random() * ( canvas.width - (3 * applesStack[0].dimension) ) ) + (2 * applesStack[0].dimension);
-    } while (random % 25 !== 0);
+    } while (random % (canvas.width / 20) !== 0);
 
     return random;
 };
@@ -210,7 +209,7 @@ const isAppleInCollision = (appleFromStack) => {
         if (appleFromStack.xPos === applesStack[i].xPos && appleFromStack.yPos === applesStack[i].yPos)
             return true;
 
-    // if collisions not detected
+    // If collisions not detected
     return false;
 };
 
@@ -249,7 +248,7 @@ const checkAppleEaten = () => {
     }
 };
 
-const checkBoundariesCollision = () => {
+const isBoundariesCollision = () => {
     return (
         snake.xPos < 0 || snake.xPos > (canvas.width - snake.dimension) || 
         snake.yPos < 0 || snake.yPos > (canvas.height - snake.dimension)
@@ -295,21 +294,25 @@ const gameloop = () => {
     isPaused.state && drawPauseState();
 
     if ( !isPaused.state ) {
-        drawSnake();
-        
         drawApple();
         
-        checkAppleEaten();
+        drawSnake();
 
-        // (short-if) If boundaries collision detected = gameOver()
-        checkBoundariesCollision() && gameOver();
+        checkAppleEaten();
+    
+        // (short-if) If tail or boundaries collision detected = gameOver()
+        isTailCollision() && gameOver();
+        isBoundariesCollision() && gameOver();
     }
 
-    setTimeout(
-        gameloop,
-        // 1000 / x => x frames per 1 second [1s=1000ms], "x" depend on chosen game level
-        1000 / getComputedFramesByGameLevel()
-    );
+    // setTimeout(
+    //     gameloop,
+    //     // 1000 / x => x frames per 1 second [1s=1000ms], "x" depend on chosen game level
+    //     1000 / getComputedFramesByGameLevel()
+    // );
+
+    setTimeout(() => { console.log(performance.now()); requestAnimationFrame(gameloop) }, 40);
+    
 };
 
 const init = () => {
