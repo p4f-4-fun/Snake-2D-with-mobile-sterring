@@ -1,0 +1,177 @@
+@mixin boxShadowInset ($color) {
+    -webkit-box-shadow: inset 0px 0px 4px 2px $color;
+    -moz-box-shadow: inset 0px 0px 4px 2px $color;
+    box-shadow: inset 0px 0px 4px 2px $color;
+}
+
+
+
+* {
+    box-sizing: border-box;
+
+    margin: 0;
+    margin-inline: 0;
+    margin-block: 0;
+
+    padding: 0;
+    padding-inline: 0;
+    padding-block: 0;
+}
+
+:root {
+    --base-bg-color: 60,56,69;
+    --base-bg-color-light: 70,66,79;
+    --base-bg-color-dark: 50,46,59;
+    --base-bg-color-darker: 40,36,49;
+    --base-font-color: 249,249,249;
+    --base-font-blueish: 49,149,249;
+    --base-font-contrast: 0,0,0;
+    --transition-duration: 0.25s;
+}
+
+html {
+    font-size: 62.5%;
+}
+@media screen and (max-width: 600px) {
+    html {
+        font-size: 50%;
+    }
+}
+
+body {
+    background-color: rgba(var(--base-bg-color), 1);
+    color: rgba(var(--base-font-color), 1);
+    font-family: "Press Start 2P", monospace, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 2rem;
+    font-style: normal;
+    font-weight: 400;
+    height: 100vh;
+    width: 100vw;
+}
+
+.header-container {
+    border: 2px solid var(--base-font-contrast);
+    color: rgba(var(--base-font-color), 1);
+    display: flex;
+    justify-content: center;
+    padding-top: 3rem;
+    width: 100vw;
+
+    h1 {
+        pre { font-family: inherit; }
+        span { color: rgba(var(--base-font-blueish), 1); }
+    }
+}
+
+.game-container {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding-top: 6rem;
+    width: 100vw;
+
+    .score-board {
+        padding-top: 1rem;
+    }
+
+    .game-level {
+        display: flex;
+        column-gap: 1rem;
+        justify-content: center;
+        margin: 2rem 0;
+        position: relative;
+
+        @media screen and (max-width: 600px) {
+            & {
+                column-gap: normal;
+                justify-content: space-evenly;
+                width: 100%;
+            }
+        }
+
+        &::before {
+            background-color: rgba(var(--base-bg-color-dark), 1);
+            @include boxShadowInset(rgba(var(--base-bg-color-darker), 1));
+            color: rgba(var(--base-font-blueish), 1);
+            content: attr(data-before-content);
+            left: 0;
+            padding: 1.5rem 0;
+            pointer-events: none;
+            position: absolute;
+            opacity: 0;
+            text-align: center;
+            transform: translate(-25%, -6rem);
+            transition: transform var(--transition-duration) ease-out, opacity var(--transition-duration) ease-in;
+            top: 0;
+            width: 59rem;
+            z-index: 1;
+        }
+
+        // Nice more precise/ direct, but for UX better to hover on parent layer - translate doesn't fadeOut between gaps of .level buttons
+        // &:has(.level:hover)::before {
+        //     opacity: 1;
+        //     transform: translate(0, -6rem);
+        // }
+
+        &:hover::before {
+            opacity: 1;
+            transform: translate(0, -6rem);
+        }
+
+        .level::before {
+            content: attr(data-level);
+        }
+        .level {
+            background-color: rgba(var(--base-bg-color-dark), 1);
+            @include boxShadowInset(rgba(var(--base-bg-color-darker), 1));
+            cursor: pointer;
+            padding: 2rem;
+            transition: background-color var(--transition-duration) ease-out;
+        }
+        .level.active, 
+        .level:hover {
+            background-color: rgba(var(--base-bg-color-darker), 1);
+        }
+    }
+    .canvas-wrapper {
+        align-items: center;
+        aspect-ratio: 1;
+        @include boxShadowInset(rgba(var(--base-font-contrast), .5));
+        display: flex;
+        justify-content: center;
+        width: 508px;
+
+        @media screen and (max-width: 600px) {
+            & {
+                box-shadow: none;
+                width: 500px;
+            }
+
+            #game-canvas {
+                outline: 1px solid rgba(var(--base-font-blueish), 1);
+            }
+        }
+    }
+}
+
+.footer-container {
+    $footerBaseColor: var(--base-font-blueish);
+
+    bottom: 0;
+    border-top: 1px solid rgba($footerBaseColor, 1);
+    color: rgba($footerBaseColor, 1);
+    display: flex;
+    font-size: 1.2rem;
+    justify-content: center;
+    left: 0;
+    padding: 1.5rem;
+    position: fixed;
+    width: 100vw;
+
+    span :first-child {
+        color: rgba(var(--base-font-color), 1);
+    }
+}
+
+
