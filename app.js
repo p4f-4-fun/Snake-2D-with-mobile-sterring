@@ -10,6 +10,7 @@ const ctx = canvas.getContext("2d");
 
 const appGlobalProperties = {
     colorWhite: "rgba(249,249,249, 1)",
+    colorGreen: "rgba(62,249,124, 1)",
     colorBlue: "rgba(49,149,249, 1)",
     colorDark: "rgba(60,56,69, 1)",
     colorRed: "rgba(249,0,0, 1)",
@@ -43,7 +44,7 @@ const snake = {
     dimension: canvas.width / 20,
     direction: "right",
     tail: [],
-    tailColor: appGlobalProperties.colorWhite,
+    tailColor: appGlobalProperties.colorGreen,
     xPos: canvas.width/2,
     yPos: canvas.height/2,
 };
@@ -172,7 +173,7 @@ const drawSnake = () => {
     // TAIL
     for (let i = 0; i < actualScore; i++) {
         ctx.fillStyle = snake.tailColor;
-        ctx.fillRect(snake.tail[i].x, snake.tail[i].y, snake.dimension, snake.dimension);
+        ctx.fillRect(snake.tail[i].x, snake.tail[i].y, snake.dimension/2, snake.dimension/2);
     }
 
     // Keep moving only if the game is not paused
@@ -215,7 +216,14 @@ const isAppleInCollision = (appleFromStack) => {
 
     // 2.
     for (let i = 0; i < snake.tail.length; i++)
-        if (appleFromStack.xPos === snake.tail[i].x && appleFromStack.yPos === snake.tail[i].y)
+        if (
+            appleFromStack.xPos === snake.tail[i].x - snake.dimension
+            && appleFromStack.yPos === snake.tail[i].x
+            && appleFromStack.yPos === snake.tail[i].x + snake.dimension
+            && appleFromStack.yPos === snake.tail[i].y - snake.dimension
+            && appleFromStack.yPos === snake.tail[i].y
+            && appleFromStack.yPos === snake.tail[i].y + snake.dimension
+        )
             collisionDetected = true;
 
     // 3.
@@ -321,13 +329,15 @@ const gameloop = () => {
         isBoundariesCollision() && gameOver();
     }
 
-    setTimeout(
-        gameloop,
-        // 1000 / x => x frames per 1 second [1s=1000ms], "x" depend on chosen game level
-        1000 / getComputedFramesByGameLevel()
-    );
+    // setTimeout(
+    //     gameloop,
+    //     // 1000 / x => x frames per 1 second [1s=1000ms], "x" depend on chosen game level
+    //     1000 / getComputedFramesByGameLevel()
+    // );
 
     //setTimeout(() => { console.log(performance.now()); requestAnimationFrame(gameloop) }, 40);
+
+    requestAnimationFrame(gameloop)
     
 };
 
