@@ -120,14 +120,23 @@ const gameOver = () => {
 };
 
 const mapSnakePositions = () => {
+    if (actualScore !== 0) {
+        snake.tail.unshift({x: snake.xPos, y: snake.yPos});
+        // Remove elements from [actualScore + 1] position, + 1 means next after, because of unshift now new element
+        snake.tail.splice(actualScore + 1, 1);
+        return;
+    }
+
+    // We only need [0] element at first before first apple eaten [actualScore > 0]
+    // and if we have actualScore > 0, we only use if condition.
+    // This is required to collisions detection, and without it we haven't reference positions XY of snake tail
+    snake.tail = [];
     snake.tail.unshift({x: snake.xPos, y: snake.yPos});
 };
 
-const isTailCollision = () => {
-    const pos = {x: snake.xPos, y: snake.yPos};
-
-    for (let i = 0; i < actualScore; i++) 
-        if (snake.tail[i].x === pos.x && snake.tail[i].y === pos.y)
+const isSnakeInCollisionWithTail = () => {
+    for (let i = 0; i < snake.tail.length; i++) 
+        if (snake.tail[i].x === snake.xPos && snake.tail[i].y === snake.yPos)
             return true;
 };
 
@@ -163,7 +172,7 @@ const drawSnake = () => {
     }
 
     // Keep moving only if the game is not paused
-    !isPaused.state && keepMovingSnake();
+    (isPaused.state === false) && keepMovingSnake();
 };
 
 const createAppleObjects = () => {
@@ -188,32 +197,43 @@ const getAppleRandomPosition = () => {
 };
 
 const isAppleInCollision = (appleFromStack) => {
+    let collisionDetected = false;
+
     /**
      * Collisions:
      * 1. With snake - object snake.xPos, snake.yPos
      * 2. With snake's tail - array of objects snake.tail.x|*.y []
      * 3. Between each other (apples) - array of objects applesStack.xPos|*.yPos
      */
-
     // 1.
     if (appleFromStack.xPos === snake.xPos && appleFromStack.yPos === snake.yPos)
-        return true;
+        collisionDetected = true;
 
     // 2.
-    for (let i = 0; i < actualScore; i++)
+    for (let i = 0; i < snake.tail.length; i++)
         if (appleFromStack.xPos === snake.tail[i].x && appleFromStack.yPos === snake.tail[i].y)
-            return true;
+            collisionDetected = true;
 
     // 3.
     for (let i = 0; i < applesStack.length; i++)
         if (appleFromStack.xPos === applesStack[i].xPos && appleFromStack.yPos === applesStack[i].yPos)
-            return true;
+            collisionDetected = true;
 
     // If collisions not detected
-    return false;
+    return collisionDetected;
 };
 
-const randomizeApplesLocations = () => {
+const randomizeApplesLocations = (apple) => {
+    if (apple && apple !== "undefined") {
+        do {
+            apple.xPos = getAppleRandomPosition();
+            apple.yPos = getAppleRandomPosition();
+        } while (isAppleInCollision(apple) === false);
+
+        return;
+    }
+
+    // This execution is only at init and when reload window (also init) and never more else
     for (let i = 0; i < applesStack.length; i++) {
         do {
             applesStack[i].xPos = getAppleRandomPosition();
@@ -234,24 +254,17 @@ const checkAppleEaten = () => {
         if (snake.xPos === applesStack[i].xPos && snake.yPos === applesStack[i].yPos) {
             updateScore();
 
-            // This trick is about to setting up xPos far away from game board
-            // and if all apples from stack got 999 xPos, than we know all
-            // apples have been eaten so.. then we can randomizeApplesLocations
-            // We do only xPos, because its enough, it doesnt matter now where is apple in yPos
-            applesStack[i].xPos = 999;
-
-            if ( applesStack.every(apple => apple.xPos === 999) ) {
-                randomizeApplesLocations();
-                return;
-            }
+            randomizeApplesLocations(applesStack[i]);
         }
     }
 };
 
 const isBoundariesCollision = () => {
     return (
-        snake.xPos < 0 || snake.xPos > (canvas.width - snake.dimension) || 
-        snake.yPos < 0 || snake.yPos > (canvas.height - snake.dimension)
+        snake.xPos < 0 
+        || snake.xPos > (canvas.width - snake.dimension) 
+        || snake.yPos < 0 
+        || snake.yPos > (canvas.height - snake.dimension)
     ) ? true : false;
 };
 
@@ -293,25 +306,24 @@ const gameloop = () => {
     
     isPaused.state && drawPauseState();
 
-    if ( !isPaused.state ) {
-        drawApple();
-        
+    if (isPaused.state === false) {
         drawSnake();
-
+        
+        drawApple();
         checkAppleEaten();
-    
+        
         // (short-if) If tail or boundaries collision detected = gameOver()
-        isTailCollision() && gameOver();
+        isSnakeInCollisionWithTail() && gameOver();
         isBoundariesCollision() && gameOver();
     }
 
-    // setTimeout(
-    //     gameloop,
-    //     // 1000 / x => x frames per 1 second [1s=1000ms], "x" depend on chosen game level
-    //     1000 / getComputedFramesByGameLevel()
-    // );
+    setTimeout(
+        gameloop,
+        // 1000 / x => x frames per 1 second [1s=1000ms], "x" depend on chosen game level
+        1000 / getComputedFramesByGameLevel()
+    );
 
-    setTimeout(() => { console.log(performance.now()); requestAnimationFrame(gameloop) }, 40);
+    //setTimeout(() => { console.log(performance.now()); requestAnimationFrame(gameloop) }, 40);
     
 };
 
