@@ -50,11 +50,15 @@ const snake = {
 
 const applesStack = [];
 const appleObjectsTemplate = [
-    ["color", appGlobalProperties.colorRed],
     ["dimension", snake.dimension],
+    // apple icon .png, customized, but from @ icons8.com
+    ["url", "./assets/apple-25.png"],
     ["xPos", 0],
     ["yPos", 0],
 ];
+
+// Object Image OImage
+const OImage = new Image( appleObjectsTemplate[0][1] );
 
 const createGameLevelElement = () => {
     const gameLevelContainer = $(".game-level");
@@ -127,9 +131,9 @@ const mapSnakePositions = () => {
         return;
     }
 
-    // We only need [0] element at first before first apple eaten [actualScore > 0]
-    // and if we have actualScore > 0, we only use if condition.
-    // This is required to collisions detection, and without it we haven't reference positions XY of snake tail
+    // We need the only [0] element at start, before the first apple will be eaten [= actualScore > 0]
+    // and if we have actualScore > 0, now upper if condition is in use.
+    // This is only required to collisions detection, and without it we haven't reference positions XY of snake tail
     snake.tail = [];
     snake.tail.unshift({x: snake.xPos, y: snake.yPos});
 };
@@ -243,10 +247,10 @@ const randomizeApplesLocations = (apple) => {
 };
 
 const drawApple = () => {
-    ctx.fillStyle = applesStack[0].color;
+    OImage.src = applesStack[0].url;
 
     for (let i = 0; i < applesStack.length; i++)
-        ctx.fillRect(applesStack[i].xPos, applesStack[i].yPos, applesStack[0].dimension, applesStack[0].dimension);
+        ctx.drawImage(OImage, applesStack[i].xPos, applesStack[i].yPos);
 };
 
 const checkAppleEaten = () => {
