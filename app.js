@@ -19,13 +19,18 @@ const appGlobalProperties = {
 const gameLevels = {
     // "level_name": divider
     // for frames per second and more fps = more difficult game actually is
-    "EZ": 7,
-    "Regular": 15,
+    "EZ": 10,
+    "Regular": 20,
     "Pro": 30,
-    "Snakesss": 60,
+    "Snakesss": 45,
 };
 
 let gamerLevel = localStorage.getItem("gamerLevel") || "EZ";
+
+// rAF frame sterring
+let reqFPS = (() => Object.values(gameLevels)[ Object.entries(gameLevels).findIndex(entry => entry[0] === gamerLevel) ])();
+let computedDiffBetweenTimestamps = 0;
+let lastTimestamp = 0;
 
 const isPaused = {
     state: true,
@@ -45,8 +50,8 @@ const snake = {
     direction: "right",
     tail: [],
     tailColor: appGlobalProperties.colorGreen,
-    xPos: canvas.width/2,
-    yPos: canvas.height/2,
+    xPos: canvas.width / 2,
+    yPos: canvas.height / 2,
 };
 
 const applesStack = [];
@@ -57,13 +62,10 @@ const appleObjectsTemplate = [
     ["xPos", 0],
     ["yPos", 0],
 ];
-
-// Object Image OImage
-const OImage = new Image( appleObjectsTemplate[0][1] );
+// Object Image OImage with x,y dimensions which is actually snake.dimension value
+const OImage = new Image( appleObjectsTemplate[0][1], appleObjectsTemplate[0][1] );
 
 const createGameLevelElement = () => {
-    const gameLevelContainer = $(".game-level");
-
     // Create as much div levels as Object gameLevels contains (scalable)
     Object.keys(gameLevels).forEach(key => {
         const divLevelElement = $d.createElement("div");
@@ -72,26 +74,24 @@ const createGameLevelElement = () => {
         
         // flag level element active if
         (key === gamerLevel) 
-            ? divLevelElement.classList.add("level","active") 
+            ? divLevelElement.classList.add("level", "active") 
             : divLevelElement.classList.add("level");
 
-        gameLevelContainer.appendChild(divLevelElement);
+        $(".game-level").appendChild(divLevelElement);
     });
 };
 
 const gameLevelHandler = (EventTarget) => {
-    const levelActiveElements = $all(".level.active");
-    levelActiveElements.forEach(element => element.classList.remove("active"));
-    
+    $all(".level.active").forEach(element => element.classList.remove("active"));
     EventTarget.classList.add("active");
 
     gamerLevel = EventTarget.dataset.level;
     localStorage.setItem("gamerLevel", gamerLevel);
+
+    reqFPS = Object.values(gameLevels)[ Object.entries(gameLevels).findIndex(entry => entry[0] === gamerLevel) ];
 };
 
-const cleanUpCanvas = () => {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-};
+const cleanUpCanvas = () => ctx.clearRect(0, 0, canvas.width, canvas.height);
 
 const drawPauseState = () => {
     ctx.font = `${isPaused.fontSize} "${isPaused.fontFamily}"`;
@@ -99,9 +99,7 @@ const drawPauseState = () => {
     ctx.fillText(`${isPaused.text.content}`, isPaused.text.xPos, isPaused.text.yPos);
 };
 
-const renderScore = () => {
-    $(".actual-score > span").textContent = actualScore;
-};
+const renderScore = () => $(".actual-score > span").textContent = actualScore;
 
 const renderBestScore = () => {
     if (localStorage.getItem("bestScore"))
@@ -120,15 +118,13 @@ const updateScore = () => {
     renderBestScore();
 };
 
-const gameOver = () => {
-    window.location.reload();
-};
+const gameOver = () => window.location.reload();
 
 const mapSnakePositions = () => {
     if (actualScore !== 0) {
-        snake.tail.unshift({x: snake.xPos, y: snake.yPos});
-        // Remove elements from [actualScore + 1] position, + 1 means next after, because of unshift now new element
+        // Remove elements from [actualScore + 1] position, + 1 means next afters, because of unshift now new element
         snake.tail.splice(actualScore + 1, 1);
+        snake.tail.unshift({x: snake.xPos, y: snake.yPos});
         return;
     }
 
@@ -173,7 +169,7 @@ const drawSnake = () => {
     // TAIL
     for (let i = 0; i < actualScore; i++) {
         ctx.fillStyle = snake.tailColor;
-        ctx.fillRect(snake.tail[i].x, snake.tail[i].y, snake.dimension/2, snake.dimension/2);
+        ctx.fillRect(snake.tail[i].x, snake.tail[i].y, snake.dimension, snake.dimension);
     }
 
     // Keep moving only if the game is not paused
@@ -181,9 +177,7 @@ const drawSnake = () => {
 };
 
 const createAppleObjects = () => {
-    const howManyApples = 3;
-
-    for (let i = 0; i < howManyApples; i++)
+    for (let i = 0; i < 3/* <- how many */; i++)
         applesStack[i] = Object.fromEntries(appleObjectsTemplate);
 };
 
@@ -235,7 +229,7 @@ const isAppleInCollision = (appleFromStack) => {
     return collisionDetected;
 };
 
-const randomizeApplesLocations = (apple) => {
+const randomizeAppleLocation = (apple) => {
     if (apple && apple !== "undefined") {
         do {
             apple.xPos = getAppleRandomPosition();
@@ -266,7 +260,7 @@ const checkAppleEaten = () => {
         if (snake.xPos === applesStack[i].xPos && snake.yPos === applesStack[i].yPos) {
             updateScore();
 
-            randomizeApplesLocations(applesStack[i]);
+            randomizeAppleLocation(applesStack[i]);
         }
     }
 };
@@ -281,7 +275,18 @@ const isBoundariesCollision = () => {
 };
 
 const bindEventsHandler = () => {
-    // Game steering
+    // Game steering on mobile touch screen
+    canvas.addEventListener("touchstart", (Event) => {
+        isPaused.state = !isPaused.state;
+    });
+
+    $(".move-area").addEventListener("touchmove", (Event) => {
+        Event.preventDefault();
+        Event.stopImmediatePropagation();
+        console.log(Event);
+    });
+    
+    // Game steering on PC
     $d.addEventListener("keydown", (Event) => {
         if (Event.key === " ")
             isPaused.state = !isPaused.state;
@@ -307,13 +312,12 @@ const bindEventsHandler = () => {
     
     // Event delegated to parent element .game-level
     $(".game-level").addEventListener("click", (Event) => Event.target.className.startsWith("level") && gameLevelHandler(Event.target));
+
+    // Event resize
+    window.addEventListener("resize", reactOnWindowSize);
 };
 
-const getComputedFramesByGameLevel = () => {
-    return Object.values(gameLevels)[ Object.entries(gameLevels).findIndex(entry => entry[0] === gamerLevel) ];
-};
-
-const gameloop = () => {
+const gameLoop = () => {
     cleanUpCanvas();
     
     isPaused.state && drawPauseState();
@@ -328,31 +332,69 @@ const gameloop = () => {
         isSnakeInCollisionWithTail() && gameOver();
         isBoundariesCollision() && gameOver();
     }
+};
 
-    // setTimeout(
-    //     gameloop,
-    //     // 1000 / x => x frames per 1 second [1s=1000ms], "x" depend on chosen game level
-    //     1000 / getComputedFramesByGameLevel()
-    // );
+const getFrame = (innerTimestamp) => {
+    // Math.round(1000 / reqFPS)) always give the same number depend on reqFPS
+    // if we want 10fps it means the frames takes only 100ms from one second, last time should be skipped
+    // so we and last and current timestamp to achieved number >= our 100ms, and having it we know elapsed
+    // time is OK to run our gameLoop, and then is reset and everyhing once again.. easy and cool,
+    // the SECOND is something CONSTANT in our world so this is the best solution to avoid situation
+    // the our app will go faster or slower depend on user monitor refresh rate, 
+    // but despite of we get rid of the setTimeout which is not cool for gaming, but rAF isn't also smooth,
+    // because we just skipping time between our gameLoop callbacks so it looks not very good always,
+    // but this is the only way to avoid setTimeout and have loop in game  
+    if (computedDiffBetweenTimestamps >= Math.round(1000 / reqFPS)) {
+        computedDiffBetweenTimestamps = 0;
+        gameLoop();
+    }
 
-    //setTimeout(() => { console.log(performance.now()); requestAnimationFrame(gameloop) }, 40);
-
-    requestAnimationFrame(gameloop)
+    // just add timestamps nothing else and ease if which checks if lastTimestamp exist just in case..
+    computedDiffBetweenTimestamps += (lastTimestamp) && Math.round(performance.now() - lastTimestamp);
     
+    //innerTimestamp is parameter from rAF which we can use as timestamp for our calculations
+    lastTimestamp = innerTimestamp;
+    requestAnimationFrame((innerTimestamp) => getFrame(innerTimestamp));
+};
+
+const reactOnWindowSize = () => {
+    if(window.innerWidth <= 600) {
+        // Just to always have .move-area best view for UX
+        window.scrollTo(0, document.body.scrollHeight);
+
+        canvas.width = canvas.height = 400;
+
+        isPaused.fontSize = "10px";
+        isPaused.text.content = "Tap [ here ] to play game";
+        isPaused.text.xPos = canvas.width / 5;
+        isPaused.text.yPos = canvas.height / 2;
+    } else {
+        window.scrollTo(0, -document.body.scrollHeight);
+
+        canvas.width = canvas.height = 500;
+
+        isPaused.fontSize = "14px";
+        isPaused.text.content = "Press [Space] to play game";
+        isPaused.text.xPos = canvas.width / 7;
+        isPaused.text.yPos = canvas.height / 2;
+    }
 };
 
 const init = () => {
+    reactOnWindowSize();
+
     renderScore();
     renderBestScore();
 
     createGameLevelElement();
 
     createAppleObjects();
-    randomizeApplesLocations();
+    randomizeAppleLocation();
 
     bindEventsHandler();
 
-    gameloop();
+    // init gameLoop by getFrame
+    requestAnimationFrame(getFrame);
 };
 
 window.onload = init;

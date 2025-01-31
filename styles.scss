@@ -26,7 +26,7 @@
     --base-font-color: 249,249,249;
     --base-font-blueish: 49,149,249;
     --base-font-contrast: 0,0,0;
-    --transition-duration: 0.25s;
+    --transition-duration: 0.2s;
 }
 
 html {
@@ -34,7 +34,7 @@ html {
 }
 @media screen and (max-width: 600px) {
     html {
-        font-size: 50%;
+        font-size: 35%;
     }
 }
 
@@ -82,14 +82,6 @@ body {
         margin: 2rem 0;
         position: relative;
 
-        @media screen and (max-width: 600px) {
-            & {
-                column-gap: normal;
-                justify-content: space-evenly;
-                width: 100%;
-            }
-        }
-
         &::before {
             background-color: rgba(var(--base-bg-color-dark), 1);
             @include boxShadowInset(rgba(var(--base-bg-color-darker), 1));
@@ -108,12 +100,22 @@ body {
             z-index: 1;
         }
 
+        @media screen and (max-width: 600px) {
+            & {
+                justify-content: center;
+                width: 100%;
+            }
+
+            &::before {
+                width: 100%;
+            }
+        }
+
         // Nice more precise/ direct, but for UX better to hover on parent layer - translate doesn't fadeOut between gaps of .level buttons
         // &:has(.level:hover)::before {
         //     opacity: 1;
         //     transform: translate(0, -6rem);
         // }
-
         &:hover::before {
             opacity: 1;
             transform: translate(0, -6rem);
@@ -145,12 +147,35 @@ body {
         @media screen and (max-width: 600px) {
             & {
                 box-shadow: none;
-                width: 500px;
+                width: 400px;
             }
 
             #game-canvas {
                 outline: 1px solid rgba(var(--base-font-blueish), 1);
             }
+        }
+    }
+}
+
+.game-steering {
+    display: none;
+}
+@media screen and (max-width: 600px) {
+    .game-steering {
+        align-items: center;
+        display: flex;
+        justify-content: center;
+        margin-top: 5rem;
+
+        .move-area {
+            aspect-ratio: 2/1;
+            align-items: center;
+            color: rgba(var(--base-bg-color-darker), 1);
+            display: flex;
+            justify-content: center;
+            outline: 1px solid rgba(var(--base-font-blueish), 1);
+            user-select: none;
+            width: 90%;
         }
     }
 }
